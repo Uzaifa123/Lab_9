@@ -2,9 +2,9 @@ pipeline {
     agent any
     environment {
         DOCKER_REGISTRY = 'https://index.docker.io/v1/'  // Docker Hub registry URL
-        DOCKER_USERNAME = 'your-docker-username'  // Your Docker Hub username
+        DOCKER_USERNAME = 'huzaifa305'  // Your Docker Hub username
         IMAGE_NAME = 'python-app'  // Name of your Docker image
-        DOCKER_CREDENTIALS = 'docker-credentials-id'  // Docker credentials stored in Jenkins
+        DOCKER_CREDENTIALS = 'Jadenmartle@786'  // Docker credentials stored in Jenkins
     }
     stages {
         stage('Checkout') {

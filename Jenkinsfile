@@ -1,39 +1,38 @@
 pipeline {
     agent any
-    triggers {
-        githubPush() // Automatically triggers on PRs
-    }
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout scm  // Checkout the code from GitHub repository
             }
         }
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                sh 'pip install -r requirements.txt'
+                script {
+                    // Build Docker image and tag it with the build ID
+                    dockerImage = docker.build("your-docker-username/python-app:${env.BUILD_ID}")
+                }
             }
         }
-        stage('Test') {
+        stage('Run Tests') {
             steps {
-                sh 'pytest'
+                script {
+                    // Run tests in the Docker container (optional)
+                    dockerImage.inside {
+                        sh 'pytest'
+                    }
+                }
             }
         }
-        stage('Package') {
+        stage('Push Docker Image') {
             steps {
-                sh 'tar -cvf app.tar app.py requirements.txt'
+                script {
+                    // Push the Docker image to DockerHub (optional)
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker-credentials-id') {
+                        dockerImage.push()
+                    }
+                }
             }
-        }
-    }
-    post {
-        always {
-            echo 'Build complete'
-        }
-        failure {
-            echo 'Build failed'
-        }
-        success {
-            echo 'Build successful'
         }
     }
 }

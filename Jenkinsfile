@@ -1,44 +1,52 @@
 pipeline {
     agent any
     environment {
-        DOCKER_REGISTRY = 'https://index.docker.io/v1/'  // Docker Hub registry URL
-        DOCKER_USERNAME = 'huzaifa305'  // Your Docker Hub username
-        IMAGE_NAME = 'python-app'  // Name of your Docker image
-        DOCKER_CREDENTIALS = 'Jadenmartle@786'  // Docker credentials stored in Jenkins
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // Add credentials in Jenkins
+        DOCKER_IMAGE = "your-dockerhub-username/python-hello-world" // Update with your Docker Hub repo
     }
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                checkout scm  // Checkout the code from GitHub repository
+                // Pull the latest code from GitHub
+                git 'https://github.com/<username>/<repo>.git'
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build Docker image and tag it with the build ID
-                    dockerImage = docker.build("${DOCKER_USERNAME}/${IMAGE_NAME}:${env.BUILD_ID}")
+                    // Build Docker image
+                    sh 'docker build -t $DOCKER_IMAGE .'
                 }
             }
         }
-        stage('Run Tests') {
+        stage('Run Docker Container') {
             steps {
                 script {
-                    // Run tests in the Docker container
-                    dockerImage.inside {
-                        sh 'pytest'  // Run pytest to execute your tests
-                    }
+                    // Run the Docker container
+                    sh 'docker run --rm $DOCKER_IMAGE'
                 }
             }
         }
-        stage('Push Docker Image') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
-                    // Push the Docker image to DockerHub
-                    docker.withRegistry(DOCKER_REGISTRY, DOCKER_CREDENTIALS) {
-                        dockerImage.push()  // Push to DockerHub
-                    }
+                    // Log in to Docker Hub
+                    sh """
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                    """
+                    // Tag and push the Docker image
+                    sh """
+                    docker tag $DOCKER_IMAGE $DOCKER_IMAGE:latest
+                    docker push $DOCKER_IMAGE:latest
+                    """
                 }
             }
+        }
+    }
+    post {
+        always {
+            // Cleanup dangling images
+            sh 'docker system prune -f'
         }
     }
 }

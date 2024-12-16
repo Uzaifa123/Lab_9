@@ -1,14 +1,13 @@
 pipeline {
     agent any
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // Add credentials in Jenkins
-        DOCKER_IMAGE = "your-dockerhub-username/python-hello-world" // Update with your Docker Hub repo
+        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials') // Docker Hub credentials ID
+        DOCKER_IMAGE = 'huzaifa305/python-hello-world' // Docker image name
     }
     stages {
         stage('Clone Repository') {
             steps {
-                // Pull the latest code from GitHub
-                git 'https://github.com/<username>/<repo>.git'
+                git 'https://github.com/Uzaifa123/Lab_9.git'
             }
         }
         stage('Build Docker Image') {
@@ -22,7 +21,7 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Run the Docker container
+                    // Run the container locally for testing
                     sh 'docker run --rm $DOCKER_IMAGE'
                 }
             }
@@ -30,12 +29,9 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    // Log in to Docker Hub
+                    // Log in and push the image to Docker Hub
                     sh """
                     echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                    """
-                    // Tag and push the Docker image
-                    sh """
                     docker tag $DOCKER_IMAGE $DOCKER_IMAGE:latest
                     docker push $DOCKER_IMAGE:latest
                     """
@@ -45,7 +41,7 @@ pipeline {
     }
     post {
         always {
-            // Cleanup dangling images
+            // Cleanup unused Docker resources
             sh 'docker system prune -f'
         }
     }

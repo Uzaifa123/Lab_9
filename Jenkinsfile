@@ -3,7 +3,11 @@ pipeline {
 
     stages {
         stage('Checkout') {
+
+             echo 'Starting Building!'
             steps {
+
+                 echo 'Checking Jenkins File'
                 // Checkout the code from the Git repository
                 checkout scm
             }

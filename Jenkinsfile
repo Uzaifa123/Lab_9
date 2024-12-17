@@ -1,48 +1,49 @@
 pipeline {
     agent any
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials') // Docker Hub credentials ID
-        DOCKER_IMAGE = 'huzaifa305/python-hello-world' // Docker image name
-    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/Uzaifa123/Lab_9.git'
+                // Checkout the code from the Git repository
+                checkout scm
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Install Dependencies') {
             steps {
                 script {
-                    // Build Docker image
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    // Check if a requirements.txt exists, then install dependencies
+                    if (fileExists('requirements.txt')) {
+                        echo 'Installing Python dependencies...'
+                        sh 'pip install -r requirements.txt'
+                    } else {
+                        echo 'No requirements.txt found. Skipping dependency installation.'
+                    }
                 }
             }
         }
-        stage('Run Docker Container') {
+
+        stage('Run Tests') {
             steps {
                 script {
-                    // Run the container locally for testing
-                    sh 'docker run --rm $DOCKER_IMAGE'
-                }
-            }
-        }
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    // Log in and push the image to Docker Hub
-                    sh """
-                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                    docker tag $DOCKER_IMAGE $DOCKER_IMAGE:latest
-                    docker push $DOCKER_IMAGE:latest
-                    """
+                    // Check if a test directory or script exists
+                    if (fileExists('test.py')) {
+                        echo 'Running Python tests...'
+                        sh 'python test.py'
+                    } else {
+                        echo 'No test script found. Skipping tests.'
+                    }
                 }
             }
         }
     }
+
     post {
-        always {
-            // Cleanup unused Docker resources
-            sh 'docker system prune -f'
+        success {
+            echo 'Build succeeded!'
+        }
+        failure {
+            echo 'Build failed.'
         }
     }
 }
